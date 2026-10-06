@@ -22,11 +22,15 @@ const WORKOUT_ROUTINE: Record<string, { title: string; exercises: string[] }> = 
       'Super serie Bíceps/Tríceps (3 series x 12 reps)',
     ],
   },
-  'martes': {
-    title: 'Cardio Suave & Movilidad (Cuidado de Rodilla)',
+'martes': {
+    title: 'Core Rudo + Tren Superior & Cuidado Articular',
     exercises: [
-      '30-40 min de caminata a paso ligero o trote muy suave (Escucha tu rodilla)',
-      '10 min estiramientos de cadera e isquiotibiales',
+      'Plancha abdominal isométrica (4 series x 45-60 seg)',
+      'Flexiones estrictas en mini paralelas (4 series x 10-12 reps - excéntrica lenta)',
+      'Elevación de piernas colgado / en paralelas (3 series x 12 reps)',
+      'Remo horizontal con mancuernas (4 series x 12 reps)',
+      '30 min Bicicleta estática o Caminata a ritmo vivo (Sin impacto)',
+      '10 min Movilidad de cadera y estiramientos',
     ],
   },
   'miércoles': {
@@ -39,11 +43,15 @@ const WORKOUT_ROUTINE: Record<string, { title: string; exercises: string[] }> = 
       'Plancha abdominal (3 series x 45-60 seg)',
     ],
   },
-  'jueves': {
-    title: 'Cardio Suave & Movilidad',
+'jueves': {
+    title: 'Hombros, Core Rudo & Capacidad Aeróbica (Sin Impacto)',
     exercises: [
-      '30-40 min caminata a paso ligero / bicicleta suave',
-      '10 min movilidad general',
+      'Press militar de hombros con mancuernas (4 series x 10-12 reps)',
+      'Elevaciones laterales de hombro (4 series x 12-15 reps)',
+      'Plancha Spiderman / Plancha lateral (3 series x 45 seg por lado)',
+      'Paseo del granjero con mancuernas pesadas (4 series x 1 min)',
+      '30 min Bicicleta estática o Remo ergómetro (Ritmo constante e intenso)',
+      '10 min Estiramientos e higiene articular',
     ],
   },
   'viernes': {
