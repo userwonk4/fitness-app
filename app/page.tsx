@@ -1,8 +1,8 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Droplet, Dumbbell, Utensils, Activity, Scale, CheckCircle2, Circle } from 'lucide-react';
+import CoachChat from './components/CoachChat';
 
 const DIET_PLAN = {
   desayuno: '3 huevos enteros + 2 claras + 1 taza de avena con leche/agua + 1 fruta',
@@ -110,6 +110,15 @@ export default function Dashboard() {
     } else {
       alert('Error guardando peso. Revisa la conexión con Supabase.');
     }
+  };
+
+  // Construcción del contexto dinámico para enviarlo al Coach Gemini
+  const currentUserContext = {
+    water,
+    kneePain: kneeStatus,
+    workoutDone,
+    mealsDone,
+    weight: weightHistory[0]?.weight ? `${weightHistory[0].weight} kg` : null,
   };
 
   return (
@@ -276,6 +285,11 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+        </section>
+
+        {/* COACH CON IA CHILENO */}
+        <section className="md:col-span-2 mt-4">
+          <CoachChat userContext={currentUserContext} />
         </section>
 
       </main>
