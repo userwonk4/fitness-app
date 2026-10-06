@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { supabase } from '@/lib/supabase';
 
 const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: process.env.GEMINI_API_KEY || '',
 });
 
 const SYSTEM_PROMPT = `
@@ -20,27 +20,43 @@ export async function POST(req: Request) {
   try {
     const { message, userContext } = await req.json();
 
-    // 1. Obtener los últimos 10 mensajes del historial
-    const { data: history } = await supabase
-      .from('chat_logs')
-      .select('role, content')
-      .order('created_at', { ascending: true })
-      .limit(10);
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('Falta la variable GEMINI_API_KEY');
+      return NextResponse.json({ reply: 'Error: Falta configurar GEMINI_API_KEY en Vercel.' }, { status: 200 });
+    }
 
-    // 2. Guardar el mensaje del usuario en Supabase
-    await supabase.from('chat_logs').insert([
-      { role: 'user', content: message }
-    ]);
-
-    // 3. Formatear historial previo para el formato de Gemini
+    // Contexto dinámico del usuario
     const contextInfo = userContext ? `
 Contexto actual del usuario:
 - Peso más reciente: ${userContext.weight || 'Sin registro'}
 - Agua consumida hoy: ${userContext.water || '0'} L
-- Estado/Molestia de rodilla: ${userContext.kneePain ?? 'Sin reporte'}/10
+- Estado/Molestia de rodilla (1=Dolor, 5=Excelente): ${userContext.kneePain ?? 'Sin reporte'}/5
+- Entrenó hoy: ${userContext.workoutDone ? 'Sí' : 'No'}
+- Dieta cumplida hoy: ${userContext.mealsDone ? 'Sí' : 'No'}
 ` : '';
 
-    const contents = (history || []).map((msg) => ({
+    // Intento opcional de leer historial de Supabase (sin romper la ejecución si falla)
+    let history: any[] = [];
+    try {
+      const { data } = await supabase
+        .from('chat_logs')
+        .select('role, content')
+        .order('created_at', { ascending: true })
+        .limit(6);
+      if (data) history = data;
+    } catch (e) {
+      console.warn('No se pudo leer el historial de Supabase:', e);
+    }
+
+    // Guardar mensaje del usuario en Supabase (opcional)
+    try {
+      await supabase.from('chat_logs').insert([{ role: 'user', content: message }]);
+    } catch (e) {
+      console.warn('No se pudo guardar el mensaje en Supabase:', e);
+    }
+
+    // Formatear mensajes para Gemini
+    const contents = history.map((msg) => ({
       role: msg.role === 'user' ? 'user' : 'model',
       parts: [{ text: msg.content }],
     }));
@@ -50,29 +66,31 @@ Contexto actual del usuario:
       parts: [{ text: message }],
     });
 
-    // 4. Consultar a Gemini
+    // Consultar a Gemini
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents,
       config: {
-        systemInstruction: SYSTEM_PROMPT + contextInfo,
+        systemInstruction: SYSTEM_PROMPT + '\n' + contextInfo,
         temperature: 0.7,
       },
     });
 
-    const aiReply = response.text || '¡Dale weón, a ponerle talento!';
+    const aiReply = response.text || '¡Dale hermano, a ponerle talento!';
 
-    // 5. Guardar la respuesta del coach en Supabase
-    await supabase.from('chat_logs').insert([
-      { role: 'assistant', content: aiReply }
-    ]);
+    // Guardar respuesta del asistente en Supabase (opcional)
+    try {
+      await supabase.from('chat_logs').insert([{ role: 'assistant', content: aiReply }]);
+    } catch (e) {
+      console.warn('No se pudo guardar la respuesta en Supabase:', e);
+    }
 
     return NextResponse.json({ reply: aiReply });
-  } catch (error) {
-    console.error('Error en el Coach Gemini:', error);
+  } catch (error: any) {
+    console.error('Error detallado en el Coach Gemini:', error);
     return NextResponse.json(
-      { error: 'El coach está levantando discos en este momento. Intenta de nuevo.' },
-      { status: 500 }
+      { reply: `Ocurrió un error con el Coach: ${error?.message || 'Revisa la clave de API o la consola.'}` },
+      { status: 200 }
     );
   }
 }
