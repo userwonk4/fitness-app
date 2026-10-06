@@ -66,15 +66,29 @@ Contexto actual del usuario:
       parts: [{ text: message }],
     });
 
-    // Consultar a Gemini
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents,
-      config: {
-        systemInstruction: SYSTEM_PROMPT + '\n' + contextInfo,
-        temperature: 0.7,
-      },
-    });
+// Intentar llamar a Gemini con modelo principal y fallback si hay sobrecarga
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents,
+        config: {
+          systemInstruction: SYSTEM_PROMPT + '\n' + contextInfo,
+          temperature: 0.7,
+        },
+      });
+    } catch (primaryError: any) {
+      console.warn('Modelo principal ocupado, reintentando con fallback:', primaryError?.message);
+      
+      response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents,
+        config: {
+          systemInstruction: SYSTEM_PROMPT + '\n' + contextInfo,
+          temperature: 0.7,
+        },
+      });
+    }
 
     const aiReply = response.text || '¡Dale hermano, a ponerle talento!';
 
